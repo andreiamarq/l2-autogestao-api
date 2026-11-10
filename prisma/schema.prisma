@@ -1,0 +1,121 @@
+// Schema do L2 AutoGestão, baseado no MER / DER lógico do projeto.
+// Campos "enum" são String porque o SQLite não suporta enums no Prisma 5.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  id               Int       @id @default(autoincrement())
+  nome             String
+  email            String    @unique
+  senhaHash        String
+  perfil           String    @default("ATENDENTE") // ADMIN | ATENDENTE
+  ativo            Boolean   @default(true)
+  // Recuperação de senha: guardamos apenas o hash do token
+  resetTokenHash   String?
+  resetTokenExpira DateTime?
+  criadoEm         DateTime  @default(now())
+
+  comandas      Comanda[]
+  movimentacoes MovimentacaoEstoque[]
+}
+
+model Cliente {
+  id           Int      @id @default(autoincrement())
+  nome         String
+  telefone     String
+  cpfCnpj      String?  @unique
+  dataCadastro DateTime @default(now())
+
+  veiculos Veiculo[]
+}
+
+model Veiculo {
+  id          Int     @id @default(autoincrement())
+  placa       String  @unique
+  marcaModelo String
+  cor         String?
+  porte       String? // PEQUENO | MEDIO | GRANDE
+  clienteId   Int
+
+  cliente  Cliente   @relation(fields: [clienteId], references: [id])
+  comandas Comanda[]
+}
+
+model Servico {
+  id             Int     @id @default(autoincrement())
+  nome           String
+  descricao      String?
+  porteAplicavel String? // PEQUENO | MEDIO | GRANDE
+  preco          Float
+  ativo          Boolean @default(true)
+
+  itens ItemComanda[]
+}
+
+model Produto {
+  id            Int     @id @default(autoincrement())
+  nome          String
+  categoria     String
+  unidade       String
+  precoVenda    Float
+  saldoEstoque  Int     @default(0)
+  estoqueMinimo Int     @default(0)
+  ativo         Boolean @default(true)
+
+  itens         ItemComanda[]
+  movimentacoes MovimentacaoEstoque[]
+}
+
+model Comanda {
+  id             Int       @id @default(autoincrement())
+  codigo         String    @unique
+  veiculoId      Int
+  usuarioId      Int
+  dataHoraEntrada DateTime @default(now())
+  dataHoraSaida  DateTime?
+  status         String    @default("ABERTA") // ABERTA | FINALIZADA | CANCELADA
+  formaPagamento String?
+  valorTotal     Float     @default(0)
+
+  veiculo       Veiculo               @relation(fields: [veiculoId], references: [id])
+  usuario       Usuario               @relation(fields: [usuarioId], references: [id])
+  itens         ItemComanda[]
+  movimentacoes MovimentacaoEstoque[]
+}
+
+model ItemComanda {
+  id            Int    @id @default(autoincrement())
+  comandaId     Int
+  tipoItem      String // SERVICO | PRODUTO
+  servicoId     Int?
+  produtoId     Int?
+  quantidade    Int
+  precoUnitario Float
+  subtotal      Float
+
+  comanda Comanda  @relation(fields: [comandaId], references: [id])
+  servico Servico? @relation(fields: [servicoId], references: [id])
+  produto Produto? @relation(fields: [produtoId], references: [id])
+}
+
+model MovimentacaoEstoque {
+  id         Int      @id @default(autoincrement())
+  produtoId  Int
+  usuarioId  Int
+  comandaId  Int?
+  tipo       String // ENTRADA | BAIXA | ESTORNO
+  quantidade Int
+  dataHora   DateTime @default(now())
+  observacao String?
+
+  produto Produto  @relation(fields: [produtoId], references: [id])
+  usuario Usuario  @relation(fields: [usuarioId], references: [id])
+  comanda Comanda? @relation(fields: [comandaId], references: [id])
+}

@@ -107,7 +107,7 @@ Exemplos de corpo para criação:
 | `/produtos` | `{"nome":"Cera líquida 500ml","categoria":"Acabamento","unidade":"un","precoVenda":49.9,"saldoEstoque":12,"estoqueMinimo":3}` |
 | `/servicos` | `{"nome":"Polimento técnico","descricao":"Polimento da pintura","porteAplicavel":"MEDIO","preco":250}` (`descricao` e `porteAplicavel` opcionais) |
 
-Filtros opcionais: `GET /veiculos?clienteId=1` e `GET /produtos?abaixoDoMinimo=true`.
+Filtros opcionais: `GET /veiculos?clienteId=1`, `GET /veiculos?placa=ABC1D23` e `GET /produtos?abaixoDoMinimo=true`.
 
 ### Códigos de resposta
 
